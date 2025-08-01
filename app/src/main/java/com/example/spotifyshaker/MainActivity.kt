@@ -6,7 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.spotifyshaker.databinding.ActivityMainBinding
-import com.spotify.protocol.types.Track
+import android.content.Intent
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), 
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity(),
             if (spotifyManager.isConnected()) {
                 spotifyManager.disconnect()
             } else {
-                spotifyManager.connect()
+                spotifyManager.startAuth(this)
             }
         }
         
@@ -150,10 +150,10 @@ class MainActivity : AppCompatActivity(),
         }
     }
     
-    override fun onTrackChanged(track: Track?) {
+    override fun onTrackChanged(trackName: String?, artistName: String?) {
         runOnUiThread {
-            binding.currentTrackText.text = if (track != null) {
-                "Playing: ${track.name} by ${track.artist.name}"
+            binding.currentTrackText.text = if (trackName != null && artistName != null) {
+                "Playing: $trackName by $artistName"
             } else {
                 "No track playing"
             }
@@ -194,6 +194,11 @@ class MainActivity : AppCompatActivity(),
         super.onPause()
         // Keep shake detection running in background if connected
         // This allows the app to work even when in background
+    }
+    
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        spotifyManager.handleAuthResponse(intent)
     }
     
     override fun onDestroy() {

@@ -5,7 +5,7 @@ An Android application that changes the currently playing Spotify song when you 
 ## Features
 
 - 🎵 Shake detection using device accelerometer
-- 🎧 Spotify integration for music control
+- 🎧 Spotify integration for music control via Web API
 - 📱 Simple and intuitive user interface
 - 🔄 Real-time track information display
 - 🎯 Customizable shake sensitivity
@@ -18,26 +18,21 @@ Before you begin, ensure you have:
 2. **Spotify Developer Account** - [Sign up here](https://developer.spotify.com/)
 3. **Spotify Mobile App** installed on your test device
 4. **Android device with accelerometer** (physical device required for shake detection)
+5. **Spotify Premium** (required for playback control)
 
 ## Setup Instructions
 
 ### 1. Spotify App Registration
 
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/)
-2. Click "Create an App"
+2. Click "Create App"
 3. Fill in the app details:
    - **App Name**: Spotify Shaker
    - **App Description**: Android app that changes songs on shake
 4. Add the redirect URI: `spotify-shaker-auth://callback`
 5. Copy your **Client ID** (you'll need this later)
 
-### 2. Download Spotify SDK
-
-1. Download the Spotify Android SDK from [Spotify's GitHub releases](https://github.com/spotify/android-sdk/releases)
-2. Extract the `spotify-app-remote-release-0.8.0.aar` file
-3. Place it in the `app/libs/` directory of your project
-
-### 3. Configure the App
+### 2. Configure the App
 
 1. Open `app/src/main/java/com/example/spotifyshaker/SpotifyManager.kt`
 2. Replace `"your_spotify_client_id_here"` with your actual Spotify Client ID:
@@ -49,19 +44,21 @@ Before you begin, ensure you have:
    private const val DEFAULT_SHAKE_SONG_URI = "spotify:track:your_track_id_here"
    ```
 
-### 4. Build and Install
+### 3. Build and Install
 
 1. Open the project in Android Studio
-2. Connect your Android device via USB (enable Developer Options and USB Debugging)
-3. Build and run the project on your device
+2. The project will automatically download the Spotify Auth Library from Maven
+3. Connect your Android device via USB (enable Developer Options and USB Debugging)
+4. Build and run the project on your device
 
 ## How to Use
 
 1. **Install Spotify**: Make sure the Spotify mobile app is installed and you're logged in
-2. **Open Spotify Shaker**: Launch the app on your device
-3. **Connect to Spotify**: Tap "Connect to Spotify" and authorize the app
-4. **Start Shake Detection**: Tap "Start Shake Detection"
-5. **Shake Away!**: Shake your phone to change the currently playing song
+2. **Start Playing Music**: Open Spotify and start playing any song (this is required for playback control)
+3. **Open Spotify Shaker**: Launch the app on your device
+4. **Connect to Spotify**: Tap "Connect to Spotify" and authorize the app
+5. **Start Shake Detection**: Tap "Start Shake Detection"
+6. **Shake Away!**: Shake your phone to change the currently playing song
 
 ## How It Works
 
@@ -72,9 +69,9 @@ Before you begin, ensure you have:
 - Includes debouncing to prevent multiple rapid triggers
 
 ### Spotify Integration
-- Uses Spotify App Remote SDK for real-time playback control
-- Authenticates via OAuth 2.0 flow
-- Subscribes to player state for current track information
+- Uses Spotify Auth Library for OAuth 2.0 authentication
+- Integrates with Spotify Web API for playback control
+- Monitors current track information via API polling
 - Plays specified track when shake is detected
 
 ## Customization
@@ -111,6 +108,10 @@ private const val SHAKE_TIME_THRESHOLD = 500 // milliseconds
 - Check that your Client ID is correct
 - Verify the redirect URI matches your Spotify app settings
 
+**"No active device found"**
+- Open Spotify app and start playing music first
+- The Web API requires an active playback session to control
+
 **"Accelerometer not available"**
 - This app requires a physical device with an accelerometer
 - Emulators typically don't support shake detection
@@ -122,19 +123,21 @@ private const val SHAKE_TIME_THRESHOLD = 500 // milliseconds
 
 **Song doesn't change**
 - Make sure you're connected to Spotify
-- Verify that music is playing in Spotify
+- Verify that music is actively playing in Spotify
 - Check that the track URI is valid
+- Ensure you have Spotify Premium (required for playback control)
 
 ### Debug Logs
 
 Enable debug logging by filtering LogCat for these tags:
-- `SpotifyManager`: Spotify connection and playback events
+- `SpotifyManager`: Spotify connection and API events
 - `ShakeDetector`: Accelerometer and shake detection events
 - `MainActivity`: General app state and UI events
 
 ## Dependencies
 
-- **Spotify App Remote SDK**: Music playback control
+- **Spotify Auth Library**: OAuth 2.0 authentication (`com.spotify.android:auth:2.1.1`)
+- **OkHttp**: HTTP client for Spotify Web API calls
 - **AndroidX Libraries**: Modern Android development
 - **Material Design Components**: UI elements
 - **Kotlin Coroutines**: Asynchronous operations
@@ -145,14 +148,25 @@ The app requires these permissions:
 - `INTERNET`: Spotify API communication
 - `ACCESS_NETWORK_STATE`: Network connectivity checks
 - `WAKE_LOCK`: Keep device awake during playback
-- `MODIFY_PLAYBACK`: Spotify playback control
 
 ## API Limitations
 
-- Requires Spotify Premium for playback control
+- **Requires Spotify Premium** for playback control
 - Limited to 25 API calls per second
 - User must have Spotify app installed
 - Only works with Spotify tracks (not local files)
+- Requires active playback session for device control
+
+## Modern Spotify SDK Approach
+
+This app uses the **Spotify Auth Library** (available via Maven) combined with the **Spotify Web API**. This is the recommended approach as of 2024, replacing the older App Remote SDK method that required manual AAR file downloads.
+
+### Why This Approach?
+- ✅ No manual SDK file downloads required
+- ✅ Available through standard Maven repositories
+- ✅ More reliable authentication flow
+- ✅ Direct Web API integration
+- ✅ Better long-term support
 
 ## Contributing
 
