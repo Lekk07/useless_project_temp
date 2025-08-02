@@ -15,7 +15,8 @@ class SpotifyManager(private val context: Context) {
     
     companion object {
         private const val TAG = "SpotifyManager"
-        private const val CLIENT_ID = "your_spotify_client_id_here" // Replace with your Spotify Client ID
+        // TODO: Replace with your actual Spotify Client ID from https://developer.spotify.com/dashboard/
+        private const val CLIENT_ID = "your_spotify_client_id_here" // Get this from Spotify Developer Dashboard
         private const val REDIRECT_URI = "spotify-shaker-auth://callback"
         
         // Default song URI to play when shaking (replace with your desired song)
@@ -40,6 +41,17 @@ class SpotifyManager(private val context: Context) {
     }
     
     fun connect() {
+        // Validate configuration before attempting connection
+        if (CLIENT_ID == "your_spotify_client_id_here") {
+            val configError = Exception("CLIENT_ID not configured. Please set your Spotify Client ID in SpotifyManager.kt")
+            Log.e(TAG, "Configuration error: CLIENT_ID is not set")
+            connectionListener?.onConnectionFailed(configError)
+            return
+        }
+        
+        Log.d(TAG, "Attempting to connect to Spotify with Client ID: ${CLIENT_ID.take(8)}...")
+        Log.d(TAG, "Redirect URI: $REDIRECT_URI")
+        
         val connectionParams = ConnectionParams.Builder(CLIENT_ID)
             .setRedirectUri(REDIRECT_URI)
             .showAuthView(true)
@@ -49,7 +61,7 @@ class SpotifyManager(private val context: Context) {
             override fun onConnected(appRemote: SpotifyAppRemote) {
                 spotifyAppRemote = appRemote
                 isConnected = true
-                Log.d(TAG, "Connected to Spotify!")
+                Log.d(TAG, "Successfully connected to Spotify!")
                 
                 // Subscribe to player state
                 subscribeToPlayerState()
@@ -59,6 +71,8 @@ class SpotifyManager(private val context: Context) {
             
             override fun onFailure(error: Throwable) {
                 Log.e(TAG, "Failed to connect to Spotify", error)
+                Log.e(TAG, "Error details: ${error.message}")
+                Log.e(TAG, "Check: 1) Spotify app is installed 2) Client ID is correct 3) Redirect URI matches Spotify app settings")
                 isConnected = false
                 connectionListener?.onConnectionFailed(error)
             }
