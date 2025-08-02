@@ -15,8 +15,8 @@ class SpotifyManager(private val context: Context) {
     
     companion object {
         private const val TAG = "SpotifyManager"
-        // TODO: Replace with your actual Spotify Client ID from https://developer.spotify.com/dashboard/
-        private const val CLIENT_ID = "your_spotify_client_id_here" // Get this from Spotify Developer Dashboard
+        // Spotify Client ID - configured from web app
+        private const val CLIENT_ID = "89c4fd37aff24494b0f20708273b4bde"
         private const val REDIRECT_URI = "spotify-shaker-auth://callback"
         
         // Default song URI to play when shaking (replace with your desired song)
