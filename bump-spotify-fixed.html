@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 Bump-to-Skip Spotify</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1db954, #1ed760);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.8);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #1db954;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 200px;
+        }
+        button:hover, button:active {
+            background: #1ed760;
+            transform: translateY(-2px);
+        }
+        .status {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #1db954;
+        }
+        .slider-container {
+            margin: 20px 0;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .bump-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1db954;
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 24px;
+            display: none;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .warning {
+            background: rgba(255,165,0,0.2);
+            border-left: 4px solid orange;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .success {
+            background: rgba(29, 185, 84, 0.2);
+            border-left: 4px solid #1db954;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border-left: 4px solid red;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .button-group {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .auth-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        .download-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center;">🎵 Bump-to-Skip</h1>
+        <p style="text-align: center;">Shake or bump your phone to change Spotify playlists!</p>
+        
+        <div class="success">
+            ✅ <strong>Client ID:</strong> 89c4fd37aff24494b0f20708273b4bde
+        </div>
+        
+        <div class="download-section">
+            <h3>📱 To use on mobile:</h3>
+            <p>1. Copy all this code</p>
+            <p>2. Save as "bump-spotify.html" on your phone</p>
+            <p>3. Open the file in your mobile browser via HTTPS</p>
+            <button onclick="copyToClipboard()" style="background: orange;">
+                📋 Copy All Code
+            </button>
+        </div>
+        
+        <div class="auth-section" id="auth-section">
+            <h3>🔐 Authorize Spotify</h3>
+            <button id="auth-btn" onclick="authorizeSpotify()">Connect to Spotify</button>
+            <p style="font-size: 12px;">You'll be redirected to Spotify to log in</p>
+            <div class="warning">
+                ⚠️ Make sure redirect URI is set to:<br>
+                <code>https://eloquent-basbousa-19e833.netlify.app</code><br>
+                in your Spotify app settings!
+            </div>
+        </div>
+        
+        <div id="main-app" style="display: none;">
+            <div class="success" id="auth-success">
+                ✅ Connected to Spotify successfully!
+            </div>
+            
+            <div class="slider-container">
+                <label>Sensitivity: </label>
+                <input type="range" id="sensitivity-slider" min="5" max="30" value="15">
+                <span id="sensitivity-value">15</span>
+            </div>
+            
+            <div class="button-group">
+                <button id="toggle-btn" onclick="toggleDetection()">
+                    Start Detection
+                </button>
+                
+                <button onclick="testPlaylistSwitch()">
+                    Test Playlist Switch
+                </button>
+                
+                <button onclick="requestMotionPermission()" style="background: orange;">
+                    Enable Motion Permission
+                </button>
+                
+                <button onclick="getCurrentTrack()" style="background: purple;">
+                    Get Current Track
+                </button>
+            </div>
+            
+            <div class="status" id="status">
+                Status: Ready to start detection
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Current Track:</h3>
+                <div id="current-track" style="font-weight: bold;">
+                    Not playing
+                </div>
+            </div>
+        </div>
+        
+        <div class="bump-feedback" id="bump-feedback">
+            🎵 Track Skipped! 🎵
+        </div>
+        
+        <div id="error-section" style="display: none;">
+            <div class="error" id="error-message">
+                Authentication failed. Check console for details.
+            </div>
+            <button onclick="retryAuth()">Retry Authentication</button>
+        </div>
+        
+        <div class="warning">
+            <p>📱 Make sure Spotify is open and playing music</p>
+            <p>🔒 Grant motion permissions when prompted</p>
+            <p>💎 Requires Spotify Premium for playback control</p>
+            <p>📳 Shake your phone when detection is active!</p>
+            <p>🌐 Must be used on HTTPS (not file:// or http://)</p>
+        </div>
+    </div>
+
+    <script>
+        let accessToken = null;
+        let isListening = false;
+        let bumpThreshold = 15;
+        let lastBumpTime = 0;
+        let bumpCooldown = 2000;
+
+        // Configuration
+        const CLIENT_ID = '89c4fd37aff24494b0f20708273b4bde';
+        const REDIRECT_URI = 'https://eloquent-basbousa-19e833.netlify.app'; // FIXED: Removed extra 's'
+        const SCOPES = [
+            'user-read-playback-state',
+            'user-modify-playback-state',
+            'user-read-currently-playing',
+            'playlist-read-private',
+            'playlist-read-collaborative'
+        ].join(' ');
+
+        function copyToClipboard() {
+            const htmlContent = document.documentElement.outerHTML;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(htmlContent).then(() => {
+                    alert('✅ Code copied! Now paste it into a new file and save as "bump-spotify.html"');
+                }).catch(() => {
+                    fallbackCopy(htmlContent);
+                });
+            } else {
+                fallbackCopy(htmlContent);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('✅ Code copied! Now paste it into a new file and save as "bump-spotify.html"');
+        }
+
+        function authorizeSpotify() {
+            // FIXED: Using Implicit Grant flow instead of Authorization Code
+            const authUrl = `https://accounts.spotify.com/authorize?` +
+                `client_id=${CLIENT_ID}&` +
+                `response_type=token&` + // Changed from 'code' to 'token'
+                `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+                `scope=${encodeURIComponent(SCOPES)}&` +
+                `show_dialog=true`;
+            
+            console.log('Redirecting to:', authUrl);
+            window.location.href = authUrl;
+        }
+
+        function retryAuth() {
+            document.getElementById('error-section').style.display = 'none';
+            document.getElementById('auth-section').style.display = 'block';
+        }
+
+        function toggleDetection() {
+            const toggleBtn = document.getElementById('toggle-btn');
+            
+            if (isListening) {
+                stopListening();
+                toggleBtn.textContent = 'Start Detection';
+                updateStatus('Detection stopped');
+            } else {
+                startListening();
+                toggleBtn.textContent = 'Stop Detection';
+                updateStatus('Listening for bumps... Shake your phone!');
+            }
+        }
+
+        function startListening() {
+            if (!window.DeviceMotionEvent) {
+                alert('Device motion not supported');
+                return;
+            }
+            
+            isListening = true;
+            window.addEventListener('devicemotion', handleMotion);
+        }
+
+        function stopListening() {
+            isListening = false;
+            window.removeEventListener('devicemotion', handleMotion);
+        }
+
+        function handleMotion(event) {
+            if (!isListening) return;
+            
+            const acceleration = event.accelerationIncludingGravity;
+            if (!acceleration) return;
+            
+            const totalAcceleration = Math.sqrt(
+                Math.pow(acceleration.x || 0, 2) +
+                Math.pow(acceleration.y || 0, 2) +
+                Math.pow(acceleration.z || 0, 2)
+            );
+            
+            const now = Date.now();
+            if (totalAcceleration > bumpThreshold && 
+                now - lastBumpTime > bumpCooldown) {
+                
+                lastBumpTime = now;
+                onBumpDetected(totalAcceleration);
+            }
+        }
+
+        function onBumpDetected(magnitude) {
+            console.log(`Bump detected! Magnitude: ${magnitude.toFixed(2)}`);
+            skipToNext();
+            showBumpFeedback();
+        }
+
+        function testPlaylistSwitch() {
+            skipToNext();
+        }
+
+        function skipToNext() {
+            if (!accessToken) {
+                updateStatus('Not authenticated with Spotify');
+                return;
+            }
+
+            fetch('https://api.spotify.com/v1/me/player/next', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    updateStatus('Track skipped successfully!');
+                    setTimeout(getCurrentTrack, 1000); // Get new track info after skip
+                } else if (response.status === 403) {
+                    updateStatus('Premium required for playback control');
+                } else if (response.status === 404) {
+                    updateStatus('No active device found');
+                } else {
+                    updateStatus(`Error: ${response.status}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error skipping track:', error);
+                updateStatus('Error skipping track');
+            });
+        }
+
+        function getCurrentTrack() {
+            if (!accessToken) return;
+
+            fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            })
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else if (response.status === 204) {
+                    updateCurrentTrack('No track currently playing');
+                    return null;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            })
+            .then(data => {
+                if (data && data.item) {
+                    const trackName = `${data.item.name} - ${data.item.artists[0].name}`;
+                    updateCurrentTrack(trackName);
+                }
+            })
+            .catch(error => {
+                console.error('Error getting current track:', error);
+                updateCurrentTrack('Error getting track info');
+            });
+        }
+
+        function showBumpFeedback() {
+            const feedback = document.getElementById('bump-feedback');
+            if (feedback) {
+                feedback.style.display = 'block';
+                feedback.style.opacity = '1';
+                
+                setTimeout(() => {
+                    feedback.style.opacity = '0';
+                    setTimeout(() => {
+                        feedback.style.display = 'none';
+                    }, 300);
+                }, 1500);
+            }
+        }
+
+        function requestMotionPermission() {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            alert('Motion permission granted!');
+                            updateStatus('Motion permission granted - ready to detect bumps!');
+                        } else {
+                            alert('Motion permission denied.');
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                alert('Motion sensors should work automatically on this device.');
+            }
+        }
+
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            if (status) {
+                status.textContent = `Status: ${message}`;
+            }
+            console.log('Status:', message);
+        }
+
+        function updateCurrentTrack(name) {
+            const track = document.getElementById('current-track');
+            if (track) {
+                track.textContent = name;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-section').style.display = 'block';
+            document.getElementById('auth-section').style.display = 'none';
+        }
+
+        // FIXED: Parse token from URL hash instead of query parameters
+        function checkAuth() {
+            try {
+                // Check for access token in URL hash (Implicit Grant)
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const token = params.get('access_token');
+                const error = params.get('error');
+
+                if (error) {
+                    console.error('Auth error:', error);
+                    showError(`Authentication error: ${error}`);
+                    return;
+                }
+
+                if (token) {
+                    accessToken = token;
+                    console.log('Access token obtained successfully');
+                    
+                    document.getElementById('auth-section').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'block';
+                    updateStatus('Connected to Spotify! Ready to detect bumps.');
+                    
+                    // Get current track info
+                    getCurrentTrack();
+                    
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    console.log('No access token found, showing auth section');
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                showError('Error processing authentication');
+            }
+        }
+
+        // Bind events
+        document.getElementById('sensitivity-slider').addEventListener('input', (e) => {
+            bumpThreshold = parseInt(e.target.value);
+            document.getElementById('sensitivity-value').textContent = bumpThreshold;
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, checking authentication...');
+            checkAuth();
+            
+            // Check if we're on HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                updateStatus('Warning: Motion detection requires HTTPS');
+            }
+        });
+
+        // Auto-refresh current track every 30 seconds
+        setInterval(() => {
+            if (accessToken) {
+                getCurrentTrack();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

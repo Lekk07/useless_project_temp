@@ -137,7 +137,16 @@ class MainActivity : AppCompatActivity(),
     override fun onConnectionFailed(error: Throwable) {
         runOnUiThread {
             updateUI()
-            showToast("Failed to connect to Spotify: ${error.message}")
+            val errorMessage = when {
+                error.message?.contains("CLIENT_ID not configured") == true -> 
+                    "Configuration error: Please set your Spotify Client ID"
+                error.message?.contains("No installed app found") == true -> 
+                    "Spotify app not installed. Please install Spotify from Play Store"
+                error.message?.contains("Authentication failed") == true -> 
+                    "Authentication failed. Check your Spotify app settings"
+                else -> "Failed to connect to Spotify: ${error.message}"
+            }
+            showToast(errorMessage)
             Log.e(TAG, "Spotify connection failed", error)
         }
     }

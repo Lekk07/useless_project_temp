@@ -46,7 +46,10 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
     
-    // Spotify SDK
+    // NOTE: Spotify SDK AAR file is required for this project to work
+    // Download 'spotify-app-remote-release-0.8.0.aar' from:
+    // https://github.com/spotify/android-sdk/releases
+    // and place it in the app/libs/ directory
     implementation files('libs/spotify-app-remote-release-0.8.0.aar')
     implementation "com.google.code.gson:gson:2.10.1"
     
